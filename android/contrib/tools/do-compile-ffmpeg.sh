@@ -35,12 +35,12 @@ echo "FF_BUILD_OPT=$FF_BUILD_OPT"
 if [ -z "$FF_ARCH" ]; then
     echo "You must specific an architecture 'arm, armv7a, x86, ...'."
     echo ""
-    #exit 1
+    exit 1
 fi
 
 
 FF_BUILD_ROOT=`pwd`
-FF_ANDROID_PLATFORM=android-21
+FF_ANDROID_PLATFORM=android-9
 
 
 FF_BUILD_NAME=
@@ -163,7 +163,7 @@ elif [ "$FF_ARCH" = "arm64" ]; then
 
 else
     echo "unknown architecture $FF_ARCH";
-    #exit 1
+    exit 1
 fi
 
 if [ ! -d $FF_SOURCE ]; then
@@ -172,7 +172,7 @@ if [ ! -d $FF_SOURCE ]; then
     echo "!! Can not find FFmpeg directory for $FF_BUILD_NAME"
     echo "!! Run 'sh init-android.sh' first"
     echo ""
-    #exit 1
+    exit 1
 fi
 
 FF_TOOLCHAIN_PATH=$FF_BUILD_ROOT/build/$FF_BUILD_NAME/toolchain
@@ -214,7 +214,7 @@ echo "[*] check ffmpeg env"
 echo "--------------------"
 export PATH=$FF_TOOLCHAIN_PATH/bin/:$PATH
 #export CC="ccache ${FF_CROSS_PREFIX}-gcc"
-export CC="${FF_CROSS_PREFIX}-clang"
+export CC="${FF_CROSS_PREFIX}-gcc"
 export LD=${FF_CROSS_PREFIX}-ld
 export AR=${FF_CROSS_PREFIX}-ar
 export STRIP=${FF_CROSS_PREFIX}-strip

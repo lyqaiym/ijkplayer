@@ -28,8 +28,7 @@
 #define IJK_REGISTER_DEMUXER(x)                                         \
     {                                                                   \
         extern AVInputFormat ijkff_##x##_demuxer;                       \
-        int ijkav_register_##x##_demuxer(AVInputFormat *demuxer, int demuxer_size);   \
-        ijkav_register_##x##_demuxer(&ijkff_##x##_demuxer, sizeof(AVInputFormat));    \
+        ijkav_register_input_format(&ijkff_##x##_demuxer);              \
     }
 
 #define IJK_REGISTER_PROTOCOL(x)                                        \
@@ -76,17 +75,16 @@ void ijkav_register_all(void)
 
     /* protocols */
     av_log(NULL, AV_LOG_INFO, "===== custom modules begin =====\n");
-#ifdef __ANDROID__
-    IJK_REGISTER_PROTOCOL(ijkmediadatasource);
-#endif
-    IJK_REGISTER_PROTOCOL(ijkio);
-    IJK_REGISTER_PROTOCOL(async);
-    IJK_REGISTER_PROTOCOL(ijklongurl);
-    IJK_REGISTER_PROTOCOL(ijktcphook);
-    IJK_REGISTER_PROTOCOL(ijkhttphook);
-    IJK_REGISTER_PROTOCOL(ijksegment);
-    /* demuxers */
-    IJK_REGISTER_DEMUXER(ijklivehook);
-    IJK_REGISTER_DEMUXER(ijklas);
-    av_log(NULL, AV_LOG_INFO, "===== custom modules end =====\n");
+//#ifdef __ANDROID__
+//    IJK_REGISTER_PROTOCOL(ijkmediadatasource);
+//#endif
+//    IJK_REGISTER_PROTOCOL(ijkio);
+//    IJK_REGISTER_PROTOCOL(async);
+//    IJK_REGISTER_PROTOCOL(ijklongurl);
+//    IJK_REGISTER_PROTOCOL(ijktcphook);
+//    IJK_REGISTER_PROTOCOL(ijkhttphook);
+//    IJK_REGISTER_PROTOCOL(ijksegment);
+//    /* demuxers */
+//    IJK_REGISTER_DEMUXER(ijklivehook);
+//    av_log(NULL, AV_LOG_INFO, "===== custom modules end =====\n");
 }

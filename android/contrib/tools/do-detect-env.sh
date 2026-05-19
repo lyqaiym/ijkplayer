@@ -32,7 +32,7 @@ if [ -z "$ANDROID_NDK" ]; then
     echo "You must define ANDROID_NDK before starting."
     echo "They must point to your NDK directories."
     echo ""
-    #exit 1
+    exit 1
 fi
 
 
@@ -61,25 +61,25 @@ case "$IJK_NDK_REL" in
             esac
         else
             echo "You need the NDKr10e or later"
-            #exit 1
+            exit 1
         fi
     ;;
     *)
         IJK_NDK_REL=$(grep -o '^Pkg\.Revision.*=[0-9]*.*' $ANDROID_NDK/source.properties 2>/dev/null | sed 's/[[:space:]]*//g' | cut -d "=" -f 2)
         echo "IJK_NDK_REL=$IJK_NDK_REL"
         case "$IJK_NDK_REL" in
-            11*|12*|13*|14*|21*|22*|23*)
+            11*|12*|13*|14*)
                 if test -d ${ANDROID_NDK}/toolchains/arm-linux-androideabi-4.9
                 then
                     echo "NDKr$IJK_NDK_REL detected"
                 else
                     echo "You need the NDKr10e or later"
-                    #exit 1
+                    exit 1
                 fi
             ;;
             *)
                 echo "You need the NDKr10e or later"
-                #exit 1
+                exit 1
             ;;
         esac
     ;;
