@@ -21,6 +21,7 @@
  */
 
 #include "ff_ffplay.h"
+#include "math.h"
 
 /**
  * @file
