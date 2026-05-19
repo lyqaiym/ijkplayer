@@ -139,7 +139,17 @@ int av_get_channel_layout_nb_channels(uint64_t channel_layout) {
     return 0;
 }
 
-int av_application_alloc(AVApplicationContext **ph, void *opaque) {
+int av_application_alloc(AVApplicationContext **ph, void *opaque)
+{
+    AVApplicationContext *h = NULL;
+
+    h = av_mallocz(sizeof(AVApplicationContext));
+    if (!h)
+        return AVERROR(ENOMEM);
+
+    h->opaque = opaque;
+
+    *ph = h;
     return 0;
 }
 
