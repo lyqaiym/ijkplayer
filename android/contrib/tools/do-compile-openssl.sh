@@ -67,7 +67,7 @@ if [ "$FF_ARCH" = "armv7a" ]; then
     FF_BUILD_NAME=openssl-armv7a
     FF_SOURCE=$FF_BUILD_ROOT/$FF_BUILD_NAME
 	
-    FF_CROSS_PREFIX=arm-linux-androideabi
+    FF_CROSS_PREFIX=llvm
 	FF_TOOLCHAIN_NAME=${FF_CROSS_PREFIX}-${FF_GCC_VER}
 
     FF_PLATFORM_CFG_FLAGS="android-armv7"
@@ -109,7 +109,7 @@ elif [ "$FF_ARCH" = "arm64" ]; then
     FF_BUILD_NAME=openssl-arm64
     FF_SOURCE=$FF_BUILD_ROOT/$FF_BUILD_NAME
 
-    FF_CROSS_PREFIX=aarch64-linux-android
+    FF_CROSS_PREFIX=llvm
     FF_TOOLCHAIN_NAME=${FF_CROSS_PREFIX}-${FF_GCC_64_VER}
 
     FF_PLATFORM_CFG_FLAGS="linux-aarch64"
@@ -141,10 +141,9 @@ FF_MAKE_FLAGS=$IJK_MAKE_FLAG
 FF_MAKE_TOOLCHAIN_FLAGS="$FF_MAKE_TOOLCHAIN_FLAGS --install-dir=$FF_TOOLCHAIN_PATH"
 FF_TOOLCHAIN_TOUCH="$FF_TOOLCHAIN_PATH/touch"
 if [ ! -f "$FF_TOOLCHAIN_TOUCH" ]; then
-    $ANDROID_NDK/build/tools/make-standalone-toolchain.sh \
+    $ANDROID_NDK/build/tools//make_standalone_toolchain.py \
         $FF_MAKE_TOOLCHAIN_FLAGS \
-        --platform=$FF_ANDROID_PLATFORM \
-        --toolchain=$FF_TOOLCHAIN_NAME
+        --arch arm64
     touch $FF_TOOLCHAIN_TOUCH;
 fi
 
@@ -154,7 +153,7 @@ echo ""
 echo "--------------------"
 echo "[*] check openssl env"
 echo "--------------------"
-export PATH=$FF_TOOLCHAIN_PATH/bin:$PATH
+#export PATH=$FF_TOOLCHAIN_PATH/bin:$PATH
 
 export COMMON_FF_CFG_FLAGS=
 
@@ -168,6 +167,12 @@ FF_CFG_FLAGS="$FF_CFG_FLAGS --openssldir=$FF_PREFIX"
 FF_CFG_FLAGS="$FF_CFG_FLAGS --cross-compile-prefix=${FF_CROSS_PREFIX}-"
 FF_CFG_FLAGS="$FF_CFG_FLAGS $FF_PLATFORM_CFG_FLAGS"
 
+API=31          # NDK 24 必须用 31，不能用 24
+TOOLCHAIN=$ANDROID_NDK/toolchains/llvm/prebuilt/darwin-x86_64
+
+echo "FF_PLATFORM_CFG_FLAGS=${FF_PLATFORM_CFG_FLAGS}"
+echo "FF_CFG_FLAGS=${FF_CFG_FLAGS}"
+
 #--------------------
 echo ""
 echo "--------------------"
@@ -178,9 +183,12 @@ cd $FF_SOURCE
 #    echo 'reuse configure'
 #else
     echo "./Configure $FF_CFG_FLAGS"
-    ./Configure $FF_CFG_FLAGS
-#        --extra-cflags="$FF_CFLAGS $FF_EXTRA_CFLAGS" \
-#        --extra-ldflags="$FF_EXTRA_LDFLAGS"
+    #./Configure android-arm64 -D__ANDROID_API__=29 \
+    #./Configure $FF_CFG_FLAGS
+
+    ./Configure android-arm64 -D__ANDROID_API__=29 \
+  --prefix=$(pwd)/out/arm64-v8a \
+  no-shared no-tests
 #fi
 
 #--------------------
@@ -188,7 +196,9 @@ echo ""
 echo "--------------------"
 echo "[*] compile openssl"
 echo "--------------------"
+echo "make depend1"
 make depend
+echo "make depend2"
 make $FF_MAKE_FLAGS
 make install_sw
 

@@ -77,8 +77,17 @@ case "$IJK_NDK_REL" in
                     exit 1
                 fi
             ;;
+            24*)
+                if test -d ${ANDROID_NDK}/toolchains/llvm
+                then
+                    echo "NDKr$IJK_NDK_REL detected"
+                else
+                    echo "You need the NDKr10e or later2"
+                    #exit 1
+                fi
+            ;;
             *)
-                echo "You need the NDKr10e or later"
+            echo "You need the NDKr10e or later3"
                 exit 1
             ;;
         esac

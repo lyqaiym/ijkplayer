@@ -81,7 +81,7 @@ if [ "$FF_ARCH" = "armv7a" ]; then
     FF_BUILD_NAME_LIBSOXR=libsoxr-armv7a
     FF_SOURCE=$FF_BUILD_ROOT/$FF_BUILD_NAME
 
-    FF_CROSS_PREFIX=arm-linux-androideabi
+    FF_CROSS_PREFIX=llvm
     FF_TOOLCHAIN_NAME=${FF_CROSS_PREFIX}-${FF_GCC_VER}
 
     FF_CFG_FLAGS="$FF_CFG_FLAGS --arch=arm --cpu=cortex-a8"
@@ -99,7 +99,7 @@ elif [ "$FF_ARCH" = "armv5" ]; then
     FF_BUILD_NAME_LIBSOXR=libsoxr-armv5
     FF_SOURCE=$FF_BUILD_ROOT/$FF_BUILD_NAME
 
-    FF_CROSS_PREFIX=arm-linux-androideabi
+    FF_CROSS_PREFIX=llvm
     FF_TOOLCHAIN_NAME=${FF_CROSS_PREFIX}-${FF_GCC_VER}
 
     FF_CFG_FLAGS="$FF_CFG_FLAGS --arch=arm"
@@ -115,7 +115,7 @@ elif [ "$FF_ARCH" = "x86" ]; then
     FF_BUILD_NAME_LIBSOXR=libsoxr-x86
     FF_SOURCE=$FF_BUILD_ROOT/$FF_BUILD_NAME
 
-    FF_CROSS_PREFIX=i686-linux-android
+    FF_CROSS_PREFIX=llvm
     FF_TOOLCHAIN_NAME=x86-${FF_GCC_VER}
 
     FF_CFG_FLAGS="$FF_CFG_FLAGS --arch=x86 --cpu=i686 --enable-yasm"
@@ -133,7 +133,7 @@ elif [ "$FF_ARCH" = "x86_64" ]; then
     FF_BUILD_NAME_LIBSOXR=libsoxr-x86_64
     FF_SOURCE=$FF_BUILD_ROOT/$FF_BUILD_NAME
 
-    FF_CROSS_PREFIX=x86_64-linux-android
+    FF_CROSS_PREFIX=llvm
     FF_TOOLCHAIN_NAME=${FF_CROSS_PREFIX}-${FF_GCC_64_VER}
 
     FF_CFG_FLAGS="$FF_CFG_FLAGS --arch=x86_64 --enable-yasm"
@@ -151,10 +151,10 @@ elif [ "$FF_ARCH" = "arm64" ]; then
     FF_BUILD_NAME_LIBSOXR=libsoxr-arm64
     FF_SOURCE=$FF_BUILD_ROOT/$FF_BUILD_NAME
 
-    FF_CROSS_PREFIX=aarch64-linux-android
+    FF_CROSS_PREFIX=llvm
     FF_TOOLCHAIN_NAME=${FF_CROSS_PREFIX}-${FF_GCC_64_VER}
 
-    FF_CFG_FLAGS="$FF_CFG_FLAGS --arch=aarch64 --enable-yasm"
+    FF_CFG_FLAGS="$FF_CFG_FLAGS --arch=aarch64"
 
     FF_EXTRA_CFLAGS="$FF_EXTRA_CFLAGS"
     FF_EXTRA_LDFLAGS="$FF_EXTRA_LDFLAGS"
@@ -198,11 +198,13 @@ mkdir -p $FF_PREFIX
 
 
 FF_TOOLCHAIN_TOUCH="$FF_TOOLCHAIN_PATH/touch"
+echo "FF_TOOLCHAIN_TOUCH= $FF_TOOLCHAIN_TOUCH"
+echo "FF_ANDROID_PLATFORM= $FF_ANDROID_PLATFORM"
+echo "FF_TOOLCHAIN_NAME= $FF_TOOLCHAIN_NAME"
 if [ ! -f "$FF_TOOLCHAIN_TOUCH" ]; then
-    $ANDROID_NDK/build/tools/make-standalone-toolchain.sh \
+    $ANDROID_NDK/build/tools//make_standalone_toolchain.py \
         $FF_MAKE_TOOLCHAIN_FLAGS \
-        --platform=$FF_ANDROID_PLATFORM \
-        --toolchain=$FF_TOOLCHAIN_NAME
+        --arch arm64
     touch $FF_TOOLCHAIN_TOUCH;
 fi
 
@@ -213,14 +215,15 @@ echo "--------------------"
 echo "[*] check ffmpeg env"
 echo "--------------------"
 export PATH=$FF_TOOLCHAIN_PATH/bin/:$PATH
+echo "FF_TOOLCHAIN_PATH=$FF_TOOLCHAIN_PATH"
+
 #export CC="ccache ${FF_CROSS_PREFIX}-gcc"
-export CC="${FF_CROSS_PREFIX}-gcc"
-export LD=${FF_CROSS_PREFIX}-ld
-export AR=${FF_CROSS_PREFIX}-ar
-export STRIP=${FF_CROSS_PREFIX}-strip
+export CC=clang
+export LD=llvm-ld
+export AR=llvm-ar
+export STRIP=llvm-strip
 
 FF_CFLAGS="-O3 -Wall -pipe \
-    -std=c99 \
     -ffast-math \
     -fstrict-aliasing -Werror=strict-aliasing \
     -Wno-psabi -Wa,--noexecstack \
@@ -241,6 +244,7 @@ export COMMON_FF_CFG_FLAGS=
 
 #--------------------
 # with openssl
+echo $FF_DEP_OPENSSL_LIB=${FF_DEP_OPENSSL_LIB}/libssl.a
 if [ -f "${FF_DEP_OPENSSL_LIB}/libssl.a" ]; then
     echo "OpenSSL detected"
 # FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-nonfree"
@@ -267,7 +271,7 @@ FF_CFG_FLAGS="$FF_CFG_FLAGS --prefix=$FF_PREFIX"
 # Advanced options (experts only):
 FF_CFG_FLAGS="$FF_CFG_FLAGS --cross-prefix=${FF_CROSS_PREFIX}-"
 FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-cross-compile"
-FF_CFG_FLAGS="$FF_CFG_FLAGS --target-os=linux"
+FF_CFG_FLAGS="$FF_CFG_FLAGS --target-os=android"
 FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-pic"
 # FF_CFG_FLAGS="$FF_CFG_FLAGS --disable-symver"
 
@@ -292,21 +296,55 @@ case "$FF_BUILD_OPT" in
     ;;
 esac
 
+#FF_CFG_FLAGS="$FF_CFG_FLAGS --disable-swscale-alpha"
+#FF_CFG_FLAGS="$FF_CFG_FLAGS --disable-avfilter"
 #--------------------
 echo ""
 echo "--------------------"
 echo "[*] configurate ffmpeg"
 echo "--------------------"
+echo "AR=$AR"
+echo "FF_CFG_FLAGS=$FF_CFG_FLAGS"
+
+API=31          # NDK 24 必须用 31，不能用 24
+TOOLCHAIN=$ANDROID_NDK/toolchains/llvm/prebuilt/darwin-x86_64
+
+FF_DEP_LIBS="$FF_DEP_LIBS"
+
+echo "FF_CFLAGS=$FF_CFLAGS"
+echo "FF_DEP_LIBS=$FF_DEP_LIBS"
+
+echo "CFLAGS=$CFLAGS"
+echo "LDFLAGS=$LDFLAGS"
+
+echo "FF_SOURCE=$FF_SOURCE"
+
 cd $FF_SOURCE
+
 if [ -f "./config.h" ]; then
     echo 'reuse configure'
 else
+    echo "CC=$CC"
     which $CC
+    # ld: error: relocation R_AARCH64_ADR_PREL_PG_HI21 cannot be used against symbol ff_tx_tab_2048_float; recompile with -fPIC
+    # --enable-shared
     ./configure $FF_CFG_FLAGS \
         --extra-cflags="$FF_CFLAGS $FF_EXTRA_CFLAGS" \
-        --extra-ldflags="$FF_DEP_LIBS $FF_EXTRA_LDFLAGS"
+        --cc=$TOOLCHAIN/bin/aarch64-linux-android$API-clang \
+        --extra-ldflags="$FF_DEP_LIBS" \
+        --enable-shared \
+        --disable-static
+
     make clean
 fi
+
+echo "--------------------"
+echo "[*] compile ffmpeg"
+echo "--------------------"
+
+make -j$(nproc)
+make install
+
 
 #--------------------
 echo ""
@@ -314,8 +352,16 @@ echo "--------------------"
 echo "[*] compile ffmpeg"
 echo "--------------------"
 cp config.* $FF_PREFIX
-make $FF_MAKE_FLAGS > /dev/null
+
+echo "--------------------"
+echo "[*] compile ffmpeg"
+echo "--------------------"
+
+make $FF_MAKE_FLAGS
 make install
+echo "--------------------"
+echo "[*] make install"
+echo "--------------------"
 mkdir -p $FF_PREFIX/include/libffmpeg
 cp -f config.h $FF_PREFIX/include/libffmpeg/config.h
 
