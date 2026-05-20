@@ -224,9 +224,17 @@ void *grow_array(void *array, int elem_size, int *size, int new_size)
 
 double get_rotation(AVStream *st)
 {
+    ALOGV("FF_FFPLAY:get_rotation:codecpar=%p",st->codecpar);
+    ALOGV("FF_FFPLAY:get_rotation:side_data=%p",st->side_data);
+    ALOGV("FF_FFPLAY:get_rotation:nb_side_data=%d",st->nb_side_data);
+    ALOGV("FF_FFPLAY:get_rotation:nb_coded_side_data=%d",st->codecpar->nb_coded_side_data);
+
     AVDictionaryEntry *rotate_tag = av_dict_get(st->metadata, "rotate", NULL, 0);
-    uint8_t* displaymatrix = av_stream_get_side_data(st,
-                                                     AV_PKT_DATA_DISPLAYMATRIX, NULL);
+//    uint8_t* displaymatrix = av_stream_get_side_data(st,
+//                                                     AV_PKT_DATA_DISPLAYMATRIX, NULL);
+// TODO
+    uint8_t *displaymatrix = (uint8_t *) av_packet_side_data_get(st->codecpar->coded_side_data, st->codecpar->nb_coded_side_data,
+                                                                 AV_PKT_DATA_DISPLAYMATRIX);
     double theta = 0;
 
     if (rotate_tag && *rotate_tag->value && strcmp(rotate_tag->value, "0")) {

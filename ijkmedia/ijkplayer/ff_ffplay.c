@@ -2175,6 +2175,7 @@ static int decoder_start(Decoder *d, int (*fn)(void *), void *arg, const char *n
 
 static int ffplay_video_thread(void *arg)
 {
+    ALOGV("FF_FFPLAY:ffplay_video_thread");
     FFPlayer *ffp = arg;
     VideoState *is = ffp->is;
     AVFrame *frame = av_frame_alloc();
@@ -2188,6 +2189,7 @@ static int ffplay_video_thread(void *arg)
     int retry_convert_image = 0;
     int convert_frame_count = 0;
 
+    ALOGV("FF_FFPLAY:ffp_get_video_rotate_degrees");
 #if CONFIG_AVFILTER
     AVFilterGraph *graph = avfilter_graph_alloc();
     AVFilterContext *filt_out = NULL, *filt_in = NULL;
@@ -3140,14 +3142,14 @@ static int read_thread(void *arg)
     if (ffp->genpts)
         ic->flags |= AVFMT_FLAG_GENPTS;
 
-    av_format_inject_global_side_data(ic);
+//    av_format_inject_global_side_data(ic);
     //
     //AVDictionary **opts;
     //int orig_nb_streams;
     //opts = setup_find_stream_info_opts(ic, ffp->codec_opts);
     //orig_nb_streams = ic->nb_streams;
 
-
+    ALOGV("FF_FFPLAY:find_stream_info=%d",ffp->find_stream_info);
     if (ffp->find_stream_info) {
         AVDictionary **opts = setup_find_stream_info_opts(ic, ffp->codec_opts);
         int orig_nb_streams = ic->nb_streams;
@@ -3164,6 +3166,7 @@ static int read_thread(void *arg)
                     break;
                 }
             }
+            ALOGV("FF_FFPLAY:avformat_find_stream_info");
             err = avformat_find_stream_info(ic, opts);
         } while(0);
         ffp_notify_msg1(ffp, FFP_MSG_FIND_STREAM_INFO);
