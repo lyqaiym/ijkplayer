@@ -112,7 +112,7 @@ elif [ "$FF_ARCH" = "arm64" ]; then
     FF_CROSS_PREFIX=llvm
     FF_TOOLCHAIN_NAME=${FF_CROSS_PREFIX}-${FF_GCC_64_VER}
 
-    FF_PLATFORM_CFG_FLAGS="linux-aarch64"
+    FF_PLATFORM_CFG_FLAGS="android-arm64"
 
 else
     echo "unknown architecture $FF_ARCH";
@@ -167,11 +167,9 @@ FF_CFG_FLAGS="$FF_CFG_FLAGS --openssldir=$FF_PREFIX"
 FF_CFG_FLAGS="$FF_CFG_FLAGS --cross-compile-prefix=${FF_CROSS_PREFIX}-"
 FF_CFG_FLAGS="$FF_CFG_FLAGS $FF_PLATFORM_CFG_FLAGS"
 
-API=31          # NDK 24 必须用 31，不能用 24
-TOOLCHAIN=$ANDROID_NDK/toolchains/llvm/prebuilt/darwin-x86_64
-
 echo "FF_PLATFORM_CFG_FLAGS=${FF_PLATFORM_CFG_FLAGS}"
 echo "FF_CFG_FLAGS=${FF_CFG_FLAGS}"
+echo "FF_PREFIX=${FF_PREFIX}"
 
 #--------------------
 echo ""
@@ -179,17 +177,13 @@ echo "--------------------"
 echo "[*] configurate openssl"
 echo "--------------------"
 cd $FF_SOURCE
-#if [ -f "./Makefile" ]; then
-#    echo 'reuse configure'
-#else
-    echo "./Configure $FF_CFG_FLAGS"
-    #./Configure android-arm64 -D__ANDROID_API__=29 \
-    #./Configure $FF_CFG_FLAGS
-
-    ./Configure android-arm64 -D__ANDROID_API__=29 \
-  --prefix=$(pwd)/out/arm64-v8a \
-  no-shared no-tests
-#fi
+if [ -f "./Makefile" ]; then
+    echo 'reuse configure'
+else
+   ./Configure $FF_CFG_FLAGS \
+   --prefix=$FF_PREFIX \
+   no-shared no-tests
+fi
 
 #--------------------
 echo ""
