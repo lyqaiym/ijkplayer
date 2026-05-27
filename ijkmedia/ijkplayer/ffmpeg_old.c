@@ -39,10 +39,10 @@ void av_codec_set_pkt_timebase(AVCodecContext *avctx, AVRational val) {
     avctx->pkt_timebase = val;
 }
 
-int ffurl_close(URLContext *h) {
-    ALOGV("FFMPEG_OLD:ffurl_close");
-    return 0;
-}
+//int ffurl_close(URLContext *h) {
+//    ALOGV("FFMPEG_OLD:ffurl_close");
+//    return 0;
+//}
 
 int64_t ffurl_seek(URLContext *h, int64_t pos, int whence) {
     ALOGV("FFMPEG_OLD:ffurl_seek");
@@ -54,20 +54,20 @@ int64_t ffurl_seek(URLContext *h, int64_t pos, int whence) {
     return ret;
 }
 
-int64_t ffurl_size(URLContext *h) {
-    ALOGV("FFMPEG_OLD:ffurl_size");
-    int64_t pos, size;
-
-    size = ffurl_seek(h, 0, AVSEEK_SIZE);
-    if (size < 0) {
-        pos = ffurl_seek(h, 0, SEEK_CUR);
-        if ((size = ffurl_seek(h, -1, SEEK_END)) < 0)
-            return size;
-        size++;
-        ffurl_seek(h, pos, SEEK_SET);
-    }
-    return size;
-}
+//int64_t ffurl_size(URLContext *h) {
+//    ALOGV("FFMPEG_OLD:ffurl_size");
+//    int64_t pos, size;
+//
+//    size = ffurl_seek(h, 0, AVSEEK_SIZE);
+//    if (size < 0) {
+//        pos = ffurl_seek(h, 0, SEEK_CUR);
+//        if ((size = ffurl_seek(h, -1, SEEK_END)) < 0)
+//            return size;
+//        size++;
+//        ffurl_seek(h, pos, SEEK_SET);
+//    }
+//    return size;
+//}
 
 int av_packet_split_side_data(AVPacket *pkt) {
     ALOGV("FFMPEG_OLD:av_packet_split_side_data");
@@ -262,10 +262,10 @@ int ffurl_write(URLContext *h, const unsigned char *buf, int size) {
     return 0;
 }
 
-int ffurl_closep(URLContext **h) {
-    ALOGV("FFMPEG_OLD:ffurl_closep");
-    return 0;
-}
+//int ffurl_closep(URLContext **h) {
+//    ALOGV("FFMPEG_OLD:ffurl_closep");
+//    return 0;
+//}
 
 void av_application_on_async_read_speed(AVApplicationContext *h, AVAppAsyncReadSpeed *speed) {
     ALOGV("FFMPEG_OLD:av_application_on_async_read_speed");
@@ -279,36 +279,36 @@ void av_application_on_async_statistic(AVApplicationContext *h, AVAppAsyncStatis
  * Check if the user has requested to interrupt a blocking function
  * associated with cb.
  */
-int ff_check_interrupt(AVIOInterruptCB *cb) {
-    ALOGV("FFMPEG_OLD:ff_check_interrupt");
-    return 0;
-}
+//int ff_check_interrupt(AVIOInterruptCB *cb) {
+//    ALOGV("FFMPEG_OLD:ff_check_interrupt");
+//    return 0;
+//}
 
 int av_application_on_io_control(AVApplicationContext *h, int event_type, AVAppIOControl *control) {
     ALOGV("FFMPEG_OLD:av_application_on_io_control");
     return 0;
 }
 
-int ff_alloc_extradata(AVCodecParameters *par, int size) {
-    ALOGV("FFMPEG_OLD:ff_alloc_extradata");
-    int ret;
-
-    if (size < 0 || size >= INT32_MAX - AV_INPUT_BUFFER_PADDING_SIZE) {
-        par->extradata = NULL;
-        par->extradata_size = 0;
-        return AVERROR(EINVAL);
-    }
-    par->extradata = av_malloc(size + AV_INPUT_BUFFER_PADDING_SIZE);
-    if (par->extradata) {
-        memset(par->extradata + size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
-        par->extradata_size = size;
-        ret = 0;
-    } else {
-        par->extradata_size = 0;
-        ret = AVERROR(ENOMEM);
-    }
-    return ret;
-}
+//int ff_alloc_extradata(AVCodecParameters *par, int size) {
+//    ALOGV("FFMPEG_OLD:ff_alloc_extradata");
+//    int ret;
+//
+//    if (size < 0 || size >= INT32_MAX - AV_INPUT_BUFFER_PADDING_SIZE) {
+//        par->extradata = NULL;
+//        par->extradata_size = 0;
+//        return AVERROR(EINVAL);
+//    }
+//    par->extradata = av_malloc(size + AV_INPUT_BUFFER_PADDING_SIZE);
+//    if (par->extradata) {
+//        memset(par->extradata + size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
+//        par->extradata_size = size;
+//        ret = 0;
+//    } else {
+//        par->extradata_size = 0;
+//        ret = AVERROR(ENOMEM);
+//    }
+//    return ret;
+//}
 
 AVInputFormat *av_iformat_next(const AVInputFormat *f) {
     ALOGV("FFMPEG_OLD:av_iformat_next");
@@ -326,13 +326,13 @@ AVOutputFormat *av_oformat_next(const AVOutputFormat *f) {
     return NULL;
 }
 
-int ffurl_open_whitelist(URLContext **puc, const char *filename, int flags,
-                         const AVIOInterruptCB *int_cb, AVDictionary **options,
-                         const char *whitelist, const char *blacklist,
-                         URLContext *parent) {
-    ALOGV("FFMPEG_OLD:ffurl_open_whitelist");
-    return 0;
-}
+//int ffurl_open_whitelist(URLContext **puc, const char *filename, int flags,
+//                         const AVIOInterruptCB *int_cb, AVDictionary **options,
+//                         const char *whitelist, const char *blacklist,
+//                         URLContext *parent) {
+//    ALOGV("FFMPEG_OLD:ffurl_open_whitelist");
+//    return 0;
+//}
 
 int av_fifo_generic_write(AVFifoBuffer *f, void *src, int size, int (*func)(void *, void *, int)) {
     ALOGV("FFMPEG_OLD:av_fifo_generic_write");
@@ -349,8 +349,8 @@ void av_register_all() {
 
 AVRational av_codec_get_pkt_timebase(const AVCodecContext *avctx) {
     ALOGV("FFMPEG_OLD:av_codec_get_pkt_timebase");
-    AVRational s;
-    return s;
+//    AVRational s;
+    return avctx->time_base;
 }
 
 void avcodec_register_all(){
