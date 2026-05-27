@@ -278,3 +278,15 @@ ijkplayer is licensed under LGPLv2.1 or later, so itself is free for commercial 
 But ijkplayer is also based on other different projects under various licenses, which I have no idea whether they are compatible to each other or to your product.
 
 [IANAL](https://en.wikipedia.org/wiki/IANAL), you should always ask your lawyer for these stuffs before use it in your product.
+
+[tx_float_neon.S](android/contrib/ffmpeg-arm64/libavutil/aarch64/tx_float_neon.S)
+
+ld: error: relocation R_AARCH64_ADR_PREL_PG_HI21 cannot be used against symbol ff_tx_tab_32_float; recompile with -fPIC
+>>> defined in libavutil/tx_float.o
+>>> referenced by tx_float_neon.S:907 (libavutil/aarch64/tx_float_neon.S:907)
+>>>               libavutil/aarch64/tx_float_neon.o:(ff_tx_fft32_float_neon)
+
+movrel          \re, X(ff_tx_tab_\len\()_float) 
+改成
+adrp            x7, :got:ff_tx_tab_32_float
+ldr             x7, [x7, :got_lo12:ff_tx_tab_32_float]
