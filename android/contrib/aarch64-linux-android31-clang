@@ -1,0 +1,50 @@
+#!/bin/bash
+set -e  # 出错自动退出脚本
+
+# ===================== 配置区（你只需改这里）=====================
+# 你的 aarch64-linux-android31-clang 绝对路径
+CLANG_PATH="$ANDROID_NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android31-clang"
+# =================================================================
+
+echo "========================================"
+echo " Android Clang 编译脚本（自动移除 -g 参数）"
+echo "========================================"
+echo
+
+# 显示原始参数
+echo "原始传入参数：$*"
+echo "原始参数个数：$#"
+echo
+
+# ---------------- 核心：移除所有 -g 参数 ----------------
+new_args=()
+for arg in "$@"; do
+    if [[ "$arg" != "-g" && "$arg" != "-O0" && "$arg" != "-O3" && "$arg" != "-Oz" ]]; then
+        new_args+=("$arg")
+    fi
+    #new_args+=("$arg")
+done
+# --------------------------------------------------------
+
+echo "✅ 已自动移除参数中的 -g -O0 -O3"
+echo "处理后参数：${new_args[*]}"
+echo "处理后参数个数：${#new_args[@]}"
+echo
+
+# 检查编译器
+if [ ! -f "$CLANG_PATH" ]; then
+    echo "❌ 错误：找不到编译器 $CLANG_PATH"
+    exit 1
+fi
+
+# 执行编译（不带 -g）
+echo "👉 执行编译命令："
+echo "$CLANG_PATH ${new_args[*]}"
+echo
+
+"$CLANG_PATH" "${new_args[@]}"
+
+echo
+echo "========================================"
+echo "编译完成！返回码：$?"
+echo "========================================"

@@ -180,9 +180,9 @@ cd $FF_SOURCE
 if [ -f "./Makefile" ]; then
     echo 'reuse configure'
 else
-   ./Configure $FF_CFG_FLAGS \
-   --prefix=$FF_PREFIX \
-   no-shared no-tests
+    ./Configure $FF_CFG_FLAGS \
+    --prefix=$FF_PREFIX \
+    no-tests
 fi
 
 #--------------------

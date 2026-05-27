@@ -245,7 +245,7 @@ export COMMON_FF_CFG_FLAGS=
 #--------------------
 # with openssl
 echo $FF_DEP_OPENSSL_LIB=${FF_DEP_OPENSSL_LIB}/libssl.a
-if [ -f "${FF_DEP_OPENSSL_LIB}/libssl.a2" ]; then
+if [ -f "${FF_DEP_OPENSSL_LIB}/libssl.a" ]; then
     echo "OpenSSL detected"
   # FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-nonfree"
     FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-openssl"
