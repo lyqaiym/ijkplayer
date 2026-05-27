@@ -223,7 +223,7 @@ export LD=llvm-ld
 export AR=llvm-ar
 export STRIP=llvm-strip
 
-FF_CFLAGS="-O3 -Wall -pipe \
+FF_CFLAGS="-Wall -pipe \
     -ffast-math \
     -fstrict-aliasing -Werror=strict-aliasing \
     -Wno-psabi -Wa,--noexecstack \
@@ -245,9 +245,9 @@ export COMMON_FF_CFG_FLAGS=
 #--------------------
 # with openssl
 echo $FF_DEP_OPENSSL_LIB=${FF_DEP_OPENSSL_LIB}/libssl.a
-if [ -f "${FF_DEP_OPENSSL_LIB}/libssl.a" ]; then
+if [ -f "${FF_DEP_OPENSSL_LIB}/libssl.a2" ]; then
     echo "OpenSSL detected"
-# FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-nonfree"
+  # FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-nonfree"
     FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-openssl"
 
     FF_CFLAGS="$FF_CFLAGS -I${FF_DEP_OPENSSL_INC}"
@@ -273,12 +273,13 @@ FF_CFG_FLAGS="$FF_CFG_FLAGS --cross-prefix=${FF_CROSS_PREFIX}-"
 FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-cross-compile"
 FF_CFG_FLAGS="$FF_CFG_FLAGS --target-os=android"
 FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-pic"
-# FF_CFG_FLAGS="$FF_CFG_FLAGS --disable-symver"
+FF_CFG_FLAGS="$FF_CFG_FLAGS --disable-symver"
 
 if [ "$FF_ARCH" = "x86" ]; then
     FF_CFG_FLAGS="$FF_CFG_FLAGS --disable-asm"
 else
     # Optimization options (experts only):
+    # FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-asm"
     FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-asm"
     FF_CFG_FLAGS="$FF_CFG_FLAGS --enable-inline-asm"
 fi
@@ -328,12 +329,13 @@ else
     which $CC
     # ld: error: relocation R_AARCH64_ADR_PREL_PG_HI21 cannot be used against symbol ff_tx_tab_2048_float; recompile with -fPIC
     # --enable-shared
+    # --cc=$TOOLCHAIN/bin/aarch64-linux-android$API-clang \
     ./configure $FF_CFG_FLAGS \
         --extra-cflags="$FF_CFLAGS $FF_EXTRA_CFLAGS" \
         --cc=$TOOLCHAIN/bin/aarch64-linux-android$API-clang \
-        --extra-ldflags="$FF_DEP_LIBS" \
-        --enable-shared \
-        --disable-static
+        --extra-ldflags="$FF_DEP_LIBS -Wl,-z,notext -Wl,--undefined-version" \
+        --disable-shared \
+        --enable-static
 
     make clean
 fi
@@ -381,10 +383,35 @@ do
         echo "link $MODULE_DIR/*.o"
         FF_C_OBJ_FILES="$FF_C_OBJ_FILES $C_OBJ_FILES"
     fi
+    
+    C_OBJ_FILES="$MODULE_DIR/hevc/*.o"
+    if ls $C_OBJ_FILES 1> /dev/null 2>&1; then
+        echo "link $MODULE_DIR/*.o"
+        FF_C_OBJ_FILES="$FF_C_OBJ_FILES $C_OBJ_FILES"
+    fi
+
+    C_OBJ_FILES="$MODULE_DIR/aac/*.o"
+    if ls $C_OBJ_FILES 1> /dev/null 2>&1; then
+        echo "link $MODULE_DIR/*.o"
+        FF_C_OBJ_FILES="$FF_C_OBJ_FILES $C_OBJ_FILES"
+    fi
+
+    C_OBJ_FILES="$MODULE_DIR/bsf/*.o"
+    if ls $C_OBJ_FILES 1> /dev/null 2>&1; then
+        echo "link $MODULE_DIR/*.o"
+        FF_C_OBJ_FILES="$FF_C_OBJ_FILES $C_OBJ_FILES"
+    fi
 
     for ASM_SUB_DIR in $FF_ASSEMBLER_SUB_DIRS
     do
         ASM_OBJ_FILES="$MODULE_DIR/$ASM_SUB_DIR/*.o"
+        echo "ASM_OBJ_FILES=${ASM_OBJ_FILES}"
+        if ls $ASM_OBJ_FILES 1> /dev/null 2>&1; then
+            echo "link $MODULE_DIR/$ASM_SUB_DIR/*.o"
+            FF_ASM_OBJ_FILES="$FF_ASM_OBJ_FILES $ASM_OBJ_FILES"
+        fi
+
+        ASM_OBJ_FILES="$MODULE_DIR/$ASM_SUB_DIR/h26x/*.o"
         if ls $ASM_OBJ_FILES 1> /dev/null 2>&1; then
             echo "link $MODULE_DIR/$ASM_SUB_DIR/*.o"
             FF_ASM_OBJ_FILES="$FF_ASM_OBJ_FILES $ASM_OBJ_FILES"
@@ -392,7 +419,12 @@ do
     done
 done
 
-$CC -lm -lz -shared --sysroot=$FF_SYSROOT -Wl,--no-undefined -Wl,-z,noexecstack $FF_EXTRA_LDFLAGS \
+echo "FF_C_OBJ_FILES=${FF_C_OBJ_FILES}"
+echo "FF_ASM_OBJ_FILES=${FF_ASM_OBJ_FILES}"
+echo "FF_SYSROOT=${FF_SYSROOT}"
+echo "CC version="
+$CC --version
+$CC -lm -lz -shared --sysroot=$FF_SYSROOT $FF_EXTRA_LDFLAGS \
     -Wl,-soname,libijkffmpeg.so \
     $FF_C_OBJ_FILES \
     $FF_ASM_OBJ_FILES \
