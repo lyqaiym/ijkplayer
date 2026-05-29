@@ -192,7 +192,7 @@ static int ijklivehook_read_header(AVFormatContext *avf, AVDictionary **options)
     int         ret         = -1;
 
     c->app_ctx = (AVApplicationContext *)(intptr_t)c->app_ctx_intptr;
-    av_strstart(avf->filename, "ijklivehook:", &inner_url);
+    av_strstart(avf->url, "ijklivehook:", &inner_url);
 
     c->io_control.size = sizeof(c->io_control);
     strlcpy(c->io_control.url, inner_url, sizeof(c->io_control.url));
@@ -306,14 +306,14 @@ static const AVClass ijklivehook_class = {
     .version    = LIBAVUTIL_VERSION_INT,
 };
 
-AVInputFormat ijkff_ijklivehook_demuxer = {
-    .name           = "ijklivehook",
-    .long_name      = "Live Hook Controller",
-    .flags          = AVFMT_NOFILE | AVFMT_TS_DISCONT,
-    .priv_data_size = sizeof(Context),
-    .read_probe     = ijklivehook_probe,
-    .read_header2   = ijklivehook_read_header,
-    .read_packet    = ijklivehook_read_packet,
-    .read_close     = ijklivehook_read_close,
-    .priv_class     = &ijklivehook_class,
-};
+//AVInputFormat ijkff_ijklivehook_demuxer = {
+//    .name           = "ijklivehook",
+//    .long_name      = "Live Hook Controller",
+//    .flags          = AVFMT_NOFILE | AVFMT_TS_DISCONT,
+//    .priv_data_size = sizeof(Context),
+//    .read_probe     = ijklivehook_probe,
+//    .read_header2   = ijklivehook_read_header,
+//    .read_packet    = ijklivehook_read_packet,
+//    .read_close     = ijklivehook_read_close,
+//    .priv_class     = &ijklivehook_class,
+//};

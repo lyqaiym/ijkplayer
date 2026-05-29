@@ -339,6 +339,7 @@ int av_fifo_generic_write(AVFifoBuffer *f, void *src, int size, int (*func)(void
     return 0;
 }
 
+attribute_deprecated
 void av_register_input_format(AVInputFormat *iformat) {
     ALOGV("FFMPEG_OLD:av_register_input_format");
 }

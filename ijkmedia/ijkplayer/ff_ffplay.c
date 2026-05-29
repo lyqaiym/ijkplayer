@@ -2937,7 +2937,8 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
         is->audio_st = ic->streams[stream_index];
 
         decoder_init(&is->auddec, avctx, &is->audioq, is->continue_read_thread);
-        if ((is->ic->iformat->flags & (AVFMT_NOBINSEARCH | AVFMT_NOGENSEARCH | AVFMT_NO_BYTE_SEEK)) && !is->ic->iformat->read_seek) {
+//        if ((is->ic->iformat->flags & (AVFMT_NOBINSEARCH | AVFMT_NOGENSEARCH | AVFMT_NO_BYTE_SEEK)) && !is->ic->iformat->read_seek) {
+        if ((is->ic->iformat->flags & (AVFMT_NOBINSEARCH | AVFMT_NOGENSEARCH | AVFMT_NO_BYTE_SEEK))) {
             is->auddec.start_pts = is->audio_st->start_time;
             is->auddec.start_pts_tb = is->audio_st->time_base;
         }
@@ -3052,8 +3053,9 @@ static int is_realtime(AVFormatContext *s)
     )
         return 1;
 
-    if(s->pb && (   !strncmp(s->filename, "rtp:", 4)
-                 || !strncmp(s->filename, "udp:", 4)
+    av_log(NULL, AV_LOG_INFO, "is_realtime:url=%s", s->url);
+    if(s->pb && (   !strncmp(s->url, "rtp:", 4)
+                 || !strncmp(s->url, "udp:", 4)
                 )
     )
         return 1;
@@ -3381,7 +3383,7 @@ static int read_thread(void *arg)
             ret = avformat_seek_file(is->ic, -1, seek_min, seek_target, seek_max, is->seek_flags);
             if (ret < 0) {
                 av_log(NULL, AV_LOG_ERROR,
-                       "%s: error while seeking\n", is->ic->filename);
+                        "ret=%d,%s: error while seeking\n", ret, is->ic->url);
             } else {
                 if (is->audio_stream >= 0) {
                     packet_queue_flush(&is->audioq);
@@ -4464,6 +4466,8 @@ long ffp_get_duration_l(FFPlayer *ffp)
         return 0;
 
     int64_t duration = fftime_to_milliseconds(is->ic->duration);
+//    int64_t duration = 0;
+    av_log(NULL, AV_LOG_INFO, "get_duration:duration=%ld,%ld",duration);
     if (duration < 0)
         return 0;
 

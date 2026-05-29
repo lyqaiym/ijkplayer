@@ -225,8 +225,8 @@ void *grow_array(void *array, int elem_size, int *size, int new_size)
 double get_rotation(AVStream *st)
 {
     ALOGV("FF_FFPLAY:get_rotation:codecpar=%p",st->codecpar);
-    ALOGV("FF_FFPLAY:get_rotation:side_data=%p",st->side_data);
-    ALOGV("FF_FFPLAY:get_rotation:nb_side_data=%d",st->nb_side_data);
+//    ALOGV("FF_FFPLAY:get_rotation:side_data=%p",st->side_data);
+//    ALOGV("FF_FFPLAY:get_rotation:nb_side_data=%d",st->nb_side_data);
     ALOGV("FF_FFPLAY:get_rotation:nb_coded_side_data=%d",st->codecpar->nb_coded_side_data);
 
     AVDictionaryEntry *rotate_tag = av_dict_get(st->metadata, "rotate", NULL, 0);
