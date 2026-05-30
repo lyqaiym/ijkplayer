@@ -358,6 +358,10 @@ void avcodec_register_all(){
     ALOGV("FFMPEG_OLD:avcodec_register_all");
 }
 
+void avfilter_register_all() {
+
+}
+
 //int av_lockmgr_register(int (*cb)(void **mutex, enum AVLockOp op)){
 //    return 0;
 //}

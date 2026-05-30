@@ -185,6 +185,7 @@ void ijkmeta_set_avformat_context_l(IjkMediaMeta *meta, AVFormatContext *ic)
     if (ic->duration != AV_NOPTS_VALUE)
         ijkmeta_set_int64_l(meta, IJKM_KEY_DURATION_US, ic->duration);
 
+    av_log(NULL, AV_LOG_INFO, "ijkmeta_set_avformat_context_l:start_time=%ld",ic->start_time);
     if (ic->start_time != AV_NOPTS_VALUE)
         ijkmeta_set_int64_l(meta, IJKM_KEY_START_US, ic->start_time);
 

@@ -1075,10 +1075,13 @@ static double get_clock(Clock *c)
     if (*c->queue_serial != c->serial)
         return NAN;
     if (c->paused) {
+        av_log(NULL, AV_LOG_INFO, "get_clock:d2=%f",c->pts);
         return c->pts;
     } else {
         double time = av_gettime_relative() / 1000000.0;
-        return c->pts_drift + time - (time - c->last_updated) * (1.0 - c->speed);
+        double d = c->pts_drift + time - (time - c->last_updated) * (1.0 - c->speed);
+//        av_log(NULL, AV_LOG_INFO, "get_clock:time=%f,%f,%f,d3=%f", time, c->pts_drift, c->last_updated, d);
+        return d;
     }
 }
 
@@ -1088,6 +1091,7 @@ static void set_clock_at(Clock *c, double pts, int serial, double time)
     c->last_updated = time;
     c->pts_drift = c->pts - time;
     c->serial = serial;
+//    av_log(NULL, AV_LOG_INFO, "set_clock_at:pts=%f,%f", pts,time);
 }
 
 static void set_clock(Clock *c, double pts, int serial)
@@ -1142,12 +1146,15 @@ static double get_master_clock(VideoState *is)
     switch (get_master_sync_type(is)) {
         case AV_SYNC_VIDEO_MASTER:
             val = get_clock(&is->vidclk);
+            av_log(NULL, AV_LOG_INFO, "get_master_clock:val1=%f",val);
             break;
         case AV_SYNC_AUDIO_MASTER:
             val = get_clock(&is->audclk);
+            av_log(NULL, AV_LOG_INFO, "get_master_clock:val2=%f",val);
             break;
         default:
             val = get_clock(&is->extclk);
+//            av_log(NULL, AV_LOG_INFO, "get_master_clock:val3=%f",val);
             break;
     }
     return val;
@@ -1204,6 +1211,7 @@ static void stream_toggle_pause_l(FFPlayer *ffp, int pause_on)
         is->paused = is->audclk.paused = is->vidclk.paused = is->extclk.paused = pause_on;
         SDL_AoutPauseAudio(ffp->aout, pause_on);
     }
+    av_log(NULL, AV_LOG_INFO, "stream_toggle_pause_l:paused=%d",is->paused);
 }
 
 static void stream_update_pause_l(FFPlayer *ffp)
@@ -1349,6 +1357,7 @@ retry:
 
             /* compute nominal last_duration */
             last_duration = vp_duration(is, lastvp, vp);
+//            av_log(NULL, AV_LOG_INFO, "video_refresh:last_duration=%f,vp->pts=%f", last_duration,vp->pts);
             delay = compute_target_delay(ffp, last_duration, is);
 
             time= av_gettime_relative()/1000000.0;
@@ -1364,8 +1373,9 @@ retry:
                 is->frame_timer = time;
 
             SDL_LockMutex(is->pictq.mutex);
-            if (!isnan(vp->pts))
+            if (!isnan(vp->pts)){// 一缓存进度就归零
                 update_video_pts(is, vp->pts, vp->pos, vp->serial);
+            }
             SDL_UnlockMutex(is->pictq.mutex);
 
             if (frame_queue_nb_remaining(&is->pictq) > 1) {
@@ -2108,8 +2118,16 @@ static int audio_thread(void *arg)
                     SDL_LockMutex(ffp->af_mutex);
                     ffp->af_changed = 0;
                     char buf1[1024], buf2[1024];
-                    av_get_channel_layout_string(buf1, sizeof(buf1), -1, is->audio_filter_src.channel_layout);
-                    av_get_channel_layout_string(buf2, sizeof(buf2), -1, dec_channel_layout);
+//                    av_get_channel_layout_string(buf1, sizeof(buf1), -1, is->audio_filter_src.channel_layout);
+//                    av_get_channel_layout_string(buf2, sizeof(buf2), -1, dec_channel_layout);
+                    AVChannelLayout ch_layout1;
+                    av_channel_layout_from_mask(&ch_layout1, is->audio_filter_src.channel_layout);
+                    av_channel_layout_describe(&ch_layout1, buf1, sizeof(buf1));
+                    av_channel_layout_uninit(&ch_layout1);
+                    AVChannelLayout ch_layout2;
+                    av_channel_layout_from_mask(&ch_layout2, dec_channel_layout);
+                    av_channel_layout_describe(&ch_layout2, buf2, sizeof(buf2));
+                    av_channel_layout_uninit(&ch_layout2);
                     av_log(NULL, AV_LOG_DEBUG,
                            "Audio frame changed from rate:%d ch:%d fmt:%s layout:%s serial:%d to rate:%d ch:%d fmt:%s layout:%s serial:%d\n",
                            is->audio_filter_src.freq, is->audio_filter_src.channels, av_get_sample_fmt_name(is->audio_filter_src.fmt), buf1, last_serial,
@@ -2909,7 +2927,10 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
             sink = is->out_audio_filter;
             sample_rate    = av_buffersink_get_sample_rate(sink);
             nb_channels    = av_buffersink_get_channels(sink);
-            channel_layout = av_buffersink_get_channel_layout(sink);
+            AVChannelLayout ch_layout;
+            channel_layout = av_buffersink_get_ch_layout(sink,&ch_layout);
+            // 用完要释放
+            av_channel_layout_uninit(&ch_layout);
         }
 #else
         sample_rate    = avctx->sample_rate;
@@ -3145,6 +3166,30 @@ static int read_thread(void *arg)
         ic->flags |= AVFMT_FLAG_GENPTS;
 
 //    av_format_inject_global_side_data(ic);
+    // 遍历所有流
+    ALOGV("FF_FFPLAY:nb_streams=%d",ic->nb_streams);
+    for (int n = 0; n < ic->nb_streams; n++) {
+        AVStream *st = ic->streams[n];
+        // 直接从 codecpar 读取全局侧数据（自动可用，无需inject）
+        uint8_t *side_data;
+        size_t side_data_size;
+
+        // 示例：获取 H.264/H.265 的 extradata（最常用的全局侧数据）
+        side_data = st->codecpar->extradata;
+        side_data_size = st->codecpar->extradata_size;
+
+        // 通用方式：获取任意类型侧数据
+        AVPacketSideData *sd = av_packet_side_data_get(
+                st->codecpar->coded_side_data,
+                st->codecpar->nb_coded_side_data,
+                AV_PKT_DATA_NEW_EXTRADATA  // 侧数据类型
+        );
+        if(sd){
+            ALOGV("FF_FFPLAY:sd->type=%d",sd->type);
+        }else{
+            ALOGV("FF_FFPLAY:sd->type=null");
+        }
+    }
     //
     //AVDictionary **opts;
     //int orig_nb_streams;
@@ -3205,6 +3250,7 @@ static int read_thread(void *arg)
 
         timestamp = ffp->start_time;
         /* add the stream start time */
+        av_log(NULL, AV_LOG_INFO, "read_thread:timestamp=%ld",timestamp);
         if (ic->start_time != AV_NOPTS_VALUE)
             timestamp += ic->start_time;
         ret = avformat_seek_file(ic, -1, INT64_MIN, timestamp, INT64_MAX, 0);
@@ -3511,8 +3557,16 @@ static int read_thread(void *arg)
                         av_log(ffp, AV_LOG_INFO, "ffp_toggle_buffering: error: %d\n", ffp->error);
                         ffp_notify_msg1(ffp, FFP_MSG_ERROR);
                     } else {
-                        av_log(ffp, AV_LOG_INFO, "ffp_toggle_buffering: completed: OK\n");
-                        ffp_notify_msg1(ffp, FFP_MSG_COMPLETED);
+                        int sockerr = errno;
+                        av_log(ffp, AV_LOG_INFO, "ffp_toggle_buffering: completed: OK,sockerr=%d,%s\n",sockerr, strerror(sockerr));
+                        if(sockerr==EAGAIN||sockerr==ENETUNREACH){
+                            completed = 0;
+                            ffp_notify_msg1(ffp, FFP_MSG_ERROR);
+                        }else{
+                            ffp_notify_msg1(ffp, FFP_MSG_COMPLETED);
+                        }
+//                        av_log(ffp, AV_LOG_INFO, "ffp_toggle_buffering: completed: OK\n");
+//                        ffp_notify_msg1(ffp, FFP_MSG_COMPLETED);
                     }
                 }
             }
@@ -4412,6 +4466,7 @@ int ffp_seek_to_l(FFPlayer *ffp, long msec)
     }
 
     start_time = is->ic->start_time;
+    av_log(NULL, AV_LOG_INFO, "ffp_seek_to_l:start_time=%ld",start_time);
     if (start_time > 0 && start_time != AV_NOPTS_VALUE)
         seek_pos += start_time;
 
@@ -4450,7 +4505,7 @@ long ffp_get_current_position_l(FFPlayer *ffp)
     if (ffp->no_time_adjust) {
         return (long)pos;
     }
-
+    av_log(NULL, AV_LOG_INFO, "ffp_get_current_position_l:pos=%ld,%ld,%ld",pos,start_time,start_diff);
     if (pos < 0 || pos < start_diff)
         return 0;
 
@@ -4466,7 +4521,6 @@ long ffp_get_duration_l(FFPlayer *ffp)
         return 0;
 
     int64_t duration = fftime_to_milliseconds(is->ic->duration);
-//    int64_t duration = 0;
     av_log(NULL, AV_LOG_INFO, "get_duration:duration=%ld,%ld",duration);
     if (duration < 0)
         return 0;
