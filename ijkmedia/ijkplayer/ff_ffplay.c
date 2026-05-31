@@ -4053,7 +4053,7 @@ FFPlayer *ffp_create()
     ffp->meta = ijkmeta_create();
 
     av_opt_set_defaults(ffp);
-
+//    ffp->overlay_format = SDL_FCC_RV16;
     return ffp;
 }
 

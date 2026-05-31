@@ -643,6 +643,7 @@ typedef struct FFPlayer {
     char *video_codec_info;
     char *audio_codec_info;
     char *subtitle_codec_info;
+//  ff_ffplay.c  av_opt_set_defaults 设置回去了
     Uint32 overlay_format;
 
     int last_error;
